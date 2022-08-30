@@ -1,82 +1,9 @@
 import redis
-from redis_om import (JsonModel, EmbeddedJsonModel)
-from pydantic import (PositiveInt, PositiveFloat, EmailStr)
-from typing import List
 from faker import Faker
 import random
 
 Faker.seed(0)
 fake = Faker('en_IN')
-
-
-class Customer(JsonModel):
-    cif: str
-    bankCode: str
-    ifsc: str
-    name: str
-    address: str
-    virtualVault: str
-    phone: str
-    mobile: str
-    pan: str
-    aadhaar: str
-    email: EmailStr
-    dob: str
-    kycOnfile: bool
-
-
-class Nominee(EmbeddedJsonModel):
-    nomineeId: str
-    name: str
-    relation: str
-    dob: str
-    percentage: PositiveInt
-    mobile: str
-
-
-class Account(JsonModel):
-    cif: str
-    accountNo: str
-    accountType: str
-    dormant: bool
-    accountOpenDate: str
-    iBankEnabled: bool
-    mBankEnabled: bool
-    nominee: List[Nominee]
-
-
-class DebitCard(JsonModel):
-    cif: str
-    accountNo: str
-    description: str
-    debitCardNo: str
-    issueDate: str
-    expiryDate: str
-    type: str
-    active: bool
-
-
-class CreditCard(JsonModel):
-    cif: str
-    description: str
-    creditCardNo: str
-    issueDate: str
-    expiryDate: str
-    cvv: str
-    type: str
-    active: bool
-
-
-class LoanAccount(JsonModel):
-    cif: str
-    loanAccountNo: str
-    loanFileNo: str
-    loanType: str
-    amount: PositiveFloat
-    dormant: bool
-    issueDate: str
-    expiryDate: str
-    active: bool
 
 
 accTypeList = ["SAVINGS", "CURRENT"]
@@ -100,7 +27,7 @@ def generate_data(count, conn):
         pan = fake.bothify("?????####?")
         phone = fake.phone_number()
         mobile = phone
-        email = fake.email()
+        email = fake.email().replace('@', '\\@')
         dob = fake.date(pattern="%d-%m-%Y")
 
         accountNo = fake.bban()
@@ -114,13 +41,18 @@ def generate_data(count, conn):
         noOfNominee = fake.pyint(min_value=0, max_value=2)
         nominee = get_nominee(noOfNominee)
 
-        cust = Customer(cif=cif, bankCode=bankCode, ifsc=ifsc,
-                        name=name, address=address, virtualVault=virtualVault,
-                        phone=phone, mobile=phone, email=email, pan=pan,
-                        aadhaar=aadhaar, dob=dob, kycOnfile=kycOnfile)
-        account = Account(cif=cif, accountNo=accountNo, accountType=accountType,
-                          dormant=dormant, accountOpenDate=accountOpenDate, iBankEnabled=iBankEnabled,
-                          mBankEnabled=mBankEnabled, nominee=nominee)
+        cust = {
+            "cif": cif, "bankCode": bankCode,"ifsc": ifsc,
+            "name": name, "address": address, "virtualVault": virtualVault,
+            "phone": phone, "mobile": phone, "email": email, "pan": pan,
+            "aadhaar": aadhaar, "dob": dob, "kycOnfile": kycOnfile
+        }
+
+        account = {
+            "cif": cif, "accountNo": accountNo, "accountType": accountType,
+            "dormant": dormant, "accountOpenDate": accountOpenDate, "iBankEnabled": iBankEnabled,
+            "mBankEnabled": mBankEnabled, "nominee": nominee
+        }
 
         generateDebitCardDetails(accountNo, cif, conn)
         generateCreditCardDetails(cif, conn)
@@ -129,27 +61,30 @@ def generate_data(count, conn):
         custPrefix = "customer:" + ifsc + ":" + cif
         accPrefix = "account:" + cif + ":" + accountNo
 
-        conn.json().set(custPrefix, "$", cust.json())
-        conn.json().set(accPrefix, "$", account.json())
+        conn.json().set(custPrefix, "$", cust)
+        conn.json().set(accPrefix, "$", account)
 
 
 def get_nominee(no_of_nominee):
     global nominee
     if no_of_nominee == 1:
-        nominee1 = Nominee(nomineeId=fake.pystr_format(), name=fake.name(),
-                           relation=random.choice(relationTypeList),
-                           dob=fake.date(),
-                           percentage=100, mobile=fake.phone_number())
+        nominee1 = {
+                    "nomineeId": fake.pystr_format(), "name": fake.name(),
+                    "relation": random.choice(relationTypeList),
+                    "dob": fake.date(), "percentage": 100, "mobile": fake.phone_number()
+                    }
         nominee = [nominee1]
     elif no_of_nominee == 2:
-        nominee1 = Nominee(nomineeId=fake.pystr_format(), name=fake.name(),
-                           relation=random.choice(relationTypeList),
-                           dob=fake.date(),
-                           percentage=50, mobile=fake.phone_number())
-        nominee2 = Nominee(nomineeId=fake.pystr_format(), name=fake.name(),
-                           relation=random.choice(relationTypeList),
-                           dob=fake.date(),
-                           percentage=50, mobile=fake.phone_number())
+        nominee1 = {
+            "nomineeId": fake.pystr_format(), "name": fake.name(),
+            "relation": random.choice(relationTypeList),
+            "dob": fake.date(), "percentage": 50, "mobile": fake.phone_number()
+        }
+        nominee2 = {
+            "nomineeId": fake.pystr_format(), "name": fake.name(),
+            "relation": random.choice(relationTypeList),
+            "dob": fake.date(), "percentage": 50, "mobile": fake.phone_number()
+        }
         nominee = [nominee1, nominee2]
 
     return nominee
@@ -160,15 +95,17 @@ def generateLoanAccDetails(cif, conn):
     noOfLoanAcc = fake.pyint(min_value=0, max_value=1)
     if noOfLoanAcc == 1:
         loanAccountNo = 'LA' + fake.bban()
-        loanAccount = LoanAccount(cif=cif, loanAccountNo=loanAccountNo, loanFileNo=fake.pystr(),
-                                  loanType=random.choice(lnType),
-                                  amount=float(fake.pricetag().replace('$', '').replace(',', '')) + 1.0,
-                                  dormant=fake.boolean(chance_of_getting_true=10),
-                                  issueDate=str(fake.date_between(start_date='-20y')),
-                                  expiryDate=str(fake.date_between(start_date='today', end_date='+20y')),
-                                  active=fake.boolean(chance_of_getting_true=65))
+        loanAccount = {
+                "cif": cif, "loanAccountNo": loanAccountNo, "loanFileNo": fake.pystr(),
+                "loanType": random.choice(lnType),
+                "amount": float(fake.pricetag().replace('$', '').replace(',', '')) + 1.0,
+                "dormant": fake.boolean(chance_of_getting_true=10),
+                "issueDate": str(fake.date_between(start_date='-20y')),
+                "expiryDate": str(fake.date_between(start_date='today', end_date='+20y')),
+                "active": fake.boolean(chance_of_getting_true=65)
+        }
         loanPrefix = "loan:" + cif + ":" + loanAccountNo
-        conn.json().set(loanPrefix, "$", loanAccount.json())
+        conn.json().set(loanPrefix, "$", loanAccount)
 
 
 def generateCreditCardDetails(cif, conn):
@@ -177,12 +114,14 @@ def generateCreditCardDetails(cif, conn):
         creditCardNo1 = fake.credit_card_number()
         ccType1 = fake.credit_card_provider()
         ccExpiry1 = fake.credit_card_expire()
-        ccCard1 = CreditCard(cif=cif, description=ccType1 + " card ending with expiry " + ccExpiry1,
-                             creditCardNo=creditCardNo1, issueDate=str(fake.date_between(start_date='-4y')),
-                             expiryDate=ccExpiry1, cvv=fake.credit_card_security_code(),
-                             type=ccType1, active=fake.boolean(chance_of_getting_true=85))
+        ccCard1 = {
+            "cif": cif, "description": ccType1 + ' card ending with expiry ' + ccExpiry1,
+            "creditCardNo": creditCardNo1, "issueDate": str(fake.date_between(start_date='-4y')),
+            "expiryDate": ccExpiry1, "cvv": fake.credit_card_security_code(),
+            "type": ccType1, "active": fake.boolean(chance_of_getting_true=85)
+        }
         ccPrefix1 = "cccard:" + cif + ":" + creditCardNo1
-        conn.json().set(ccPrefix1, "$", ccCard1.json())
+        conn.json().set(ccPrefix1, "$", ccCard1)
     elif noOfCCCard == 2:
         creditCardNo1 = fake.credit_card_number()
         ccType1 = fake.credit_card_provider()
@@ -190,18 +129,22 @@ def generateCreditCardDetails(cif, conn):
         creditCardNo2 = fake.credit_card_number()
         ccExpiry1 = fake.credit_card_expire()
         ccExpiry2 = fake.credit_card_expire()
-        ccCard1 = CreditCard(cif=cif, description=ccType1 + " card ending with expiry " + ccExpiry1,
-                             creditCardNo=creditCardNo1, issueDate=str(fake.date_between(start_date='-4y')),
-                             expiryDate=ccExpiry1, cvv=fake.credit_card_security_code(),
-                             type=ccType1, active=fake.boolean(chance_of_getting_true=85))
-        ccCard2 = CreditCard(cif=cif, description=ccType2 + " card ending with expiry " + ccExpiry2,
-                             creditCardNo=creditCardNo2, issueDate=str(fake.date_between(start_date='-4y')),
-                             expiryDate=ccExpiry2, cvv=fake.credit_card_security_code(),
-                             type=ccType2, active=fake.boolean(chance_of_getting_true=85))
+        ccCard1 = {
+            "cif": cif, "description": ccType1 + ' card ending with expiry ' + ccExpiry1,
+            "creditCardNo": creditCardNo1, "issueDate": str(fake.date_between(start_date='-4y')),
+            "expiryDate": ccExpiry1, "cvv": fake.credit_card_security_code(),
+            "type": ccType1, "active": fake.boolean(chance_of_getting_true=85)
+        }
+        ccCard2 = {
+            "cif": cif, "description": ccType2 + ' card ending with expiry ' + ccExpiry2,
+            "creditCardNo": creditCardNo2, "issueDate": str(fake.date_between(start_date='-4y')),
+            "expiryDate": ccExpiry2, "cvv": fake.credit_card_security_code(),
+            "type": ccType2, "active": fake.boolean(chance_of_getting_true=85)
+        }
         ccPrefix1 = "cccard:" + cif + ":" + creditCardNo1
         ccPrefix2 = "cccard:" + cif + ":" + creditCardNo2
-        conn.json().set(ccPrefix1, "$", ccCard1.json())
-        conn.json().set(ccPrefix2, "$", ccCard2.json())
+        conn.json().set(ccPrefix1, "$", ccCard1)
+        conn.json().set(ccPrefix2, "$", ccCard2)
 
 
 def generateDebitCardDetails(accountNo, cif, conn):
@@ -211,12 +154,14 @@ def generateDebitCardDetails(accountNo, cif, conn):
         dbcExpiry = fake.credit_card_expire()
         debitCardNo = fake.credit_card_number()
         dbcType = fake.credit_card_provider()
-        dbCard = DebitCard(cif=cif, accountNo=accountNo, description=dbcType + " card ending with expiry " + dbcExpiry,
-                           debitCardNo=debitCardNo, issueDate=str(fake.date_between(start_date='-7y')),
-                           expiryDate=fake.credit_card_expire(), type=dbcType,
-                           active=fake.boolean(chance_of_getting_true=90))
+        dbCard = {
+            "cif": cif, "accountNo":accountNo, "description": dbcType + ' card ending with expiry ' + dbcExpiry,
+            "debitCardNo": debitCardNo, "issueDate": str(fake.date_between(start_date='-7y')),
+            "expiryDate": fake.credit_card_expire(), "type": dbcType,
+            "active": fake.boolean(chance_of_getting_true=90)
+        }
         dbcPrefix = "dbcard:" + accountNo + ":" + debitCardNo
-        conn.json().set(dbcPrefix, "$", dbCard.json())
+        conn.json().set(dbcPrefix, "$", dbCard)
 
 
 if __name__ == '__main__':
