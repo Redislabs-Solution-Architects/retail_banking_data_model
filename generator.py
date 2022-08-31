@@ -23,7 +23,13 @@ def generate_data(count, conn):
         address = fake.building_number() + fake.address()
         cif = fake.lexify("????").upper() + str(fake.random_number(digits=6, fix_len=True)) + str(index)
         virtualVault = fake.lexify("??").upper() + str(fake.random_number(digits=7))
-        aadhaar = fake.aadhaar_id()
+
+        aadhaar_present = fake.boolean(chance_of_getting_true=75)
+        if aadhaar_present:
+            aadhaar = fake.aadhaar_id()
+        else:
+            aadhaar = 'NA'
+
         pan = fake.bothify("?????####?")
         phone = fake.phone_number()
         mobile = phone
@@ -38,7 +44,12 @@ def generate_data(count, conn):
         dormant = fake.boolean(chance_of_getting_true=9)
         accountType = random.choice(accTypeList)
 
+        availableBalance = float(fake.pricetag().replace('$', '').replace(',', ''))
+        temp = fake.pyfloat(min_value=-100, max_value=1000)
+        ledgerBalance = availableBalance + temp
+
         noOfNominee = fake.pyint(min_value=0, max_value=2)
+        print(noOfNominee)
         nominee = get_nominee(noOfNominee)
 
         cust = {
@@ -51,7 +62,8 @@ def generate_data(count, conn):
         account = {
             "cif": cif, "accountNo": accountNo, "accountType": accountType,
             "dormant": dormant, "accountOpenDate": accountOpenDate, "iBankEnabled": iBankEnabled,
-            "mBankEnabled": mBankEnabled, "nominee": nominee
+            "mBankEnabled": mBankEnabled, "nominee": nominee,
+            "availableBalance": availableBalance, "ledgerBalance": ledgerBalance
         }
 
         generateDebitCardDetails(accountNo, cif, conn)
@@ -86,6 +98,8 @@ def get_nominee(no_of_nominee):
             "dob": fake.date(), "percentage": 50, "mobile": fake.phone_number()
         }
         nominee = [nominee1, nominee2]
+    else:
+        nominee = []
 
     return nominee
 
@@ -173,7 +187,7 @@ if __name__ == '__main__':
     for x in range(chunk):
         try:
             generate_data(count, conn)
-            print(str(x) + " chunk(s) of recordset generated")
+            print(str(x+1) + " chunk(s) of recordset generated")
         except Exception as inst:
             print(type(inst))
             print(inst)

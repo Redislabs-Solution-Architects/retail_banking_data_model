@@ -111,3 +111,40 @@ source venv/bin/activate
 pip3 install -r requirements.txt
 python3 generator.py
 ```
+
+#### Indexes
+```
+FT.CREATE idx_customer on JSON PREFIX 1 customer: SCHEMA $.cif as cif TEXT $.name as name TEXT $.mobile as mobile TEXT $.pan as pan TEXT $.aadhaar as aadhaar TEXT $.email as email TEXT
+FT.CREATE idx_account on JSON PREFIX 1 account: SCHEMA $.cif as cif TEXT $.accountNo as accountNo TEXT $.accountType as accountType TAG $.dormant as dormant TAG $.iBankEnabled as iBankEnabled TAG $.nominee.nomineeId as nomineeId TEXT 
+FT.CREATE idx_dbcard on JSON PREFIX 1 dbcard: SCHEMA $.cif as cif TEXT $.accountNo as accountNo TEXT $.type as type TAG 
+FT.CREATE idx_cccard on JSON PREFIX 1 cccard: SCHEMA $.cif as cif TEXT $.creditCardNo as creditCardNo TEXT $.expiryDate as expiryDate TEXT $.type as type TAG $.active as active TAG 
+FT.CREATE idx_loan on JSON PREFIX 1 loan: SCHEMA $.cif as cif TEXT $.amount as amount NUMERIC SORTABLE $.loanType as loanType TAG
+```
+
+#### Queries
+1. Get customer:
+    - by email
+           - FT.SEARCH idx_customer '@email:(tiwarimishti\@example.org)'
+    - by cif 
+           - FT.SEARCH idx_customer '@cif:ICKU814154312'
+    - by uid(aadhaar) 
+           - FT.SEARCH idx_customer '@aadhaar:(551747310375)'
+2. Fetch the nominee details of an account 
+          - FT.SEARCH idx_account "@cif:(BEPS620487198)" return 1 $.nominee
+3. Get all credit cards by customer id 
+          - FT.SEARCH idx_cccard '@cif:(QEOE110093342)' return 2 creditCardNo type
+4. Get maximum loan by loanTypes 
+          - FT.AGGREGATE idx_loan '@amount:[0 +inf]' groupby 1 @loanType  REDUCE MAX 1 @amount as loanmount 
+          - FT.AGGREGATE idx_loan * groupby 1 @loanType  REDUCE MAX 1 @amount as loanmount 
+5. Get total loan liabilities by loanTypes
+          - FT.AGGREGATE idx_loan *  groupby 1 @loanType  REDUCE SUM 1 @amount as loanmount
+6. Get total loan given as a HOME loan
+          - FT.AGGREGATE idx_loan '@loanType:{HOME}'  groupby 1 @loanType  REDUCE SUM 1 @amount as loanmount
+7. Get total number of different types of credit cards issued to customers
+          - FT.AGGREGATE idx_cccard * groupby 1 @type REDUCE COUNT 0 as ccTypes
+8. Get total number of inactive credit cards 
+          - FT.AGGREGATE idx_cccard '@active:{false}' groupby 1 @active REDUCE COUNT 0 as inactiveCards
+9. Get the number of different types of accounts, customers are holding in the bank 
+          - FT.AGGREGATE idx_account * groupBy 1 @accountType REDUCE COUNT 0 as count
+10. Search customer by name
+          - FT.SEARCH idx_customer '@name: srivastava'
