@@ -1,4 +1,4 @@
-package com.bestarch.demo.service;
+package com.bestarch.demo.runner;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -27,7 +27,7 @@ public class CustomerRunner implements CommandLineRunner {
 	private final static ObjectMapper objectMapper = new ObjectMapper();
 	
 	//FT.SEARCH idx_customer '@email:(tiwarimishti\@example.org)'
-	private final static String QUERY = "@email:(tiwarimishti\\@example.org)";
+	private final static String CUSTOMER_BY_EMAIL = "@email:(tiwarimishti\\@example.org)";
 	
 	@Override
 	public void run(String... args) throws Exception {
@@ -39,8 +39,9 @@ public class CustomerRunner implements CommandLineRunner {
 				//.sortBy(sortBy)
 				//.limit(limit)
 				.build();
-		SearchResults<String, String> results = commands.search("idx_customer", QUERY);
+		SearchResults<String, String> results = commands.search("idx_customer", CUSTOMER_BY_EMAIL);
 		
+		System.out.println("*********** Get customer by email *******************");
 		Customer c = null;
 		for (Document<String, String> doc : results) {
 			Set<Entry<String, String>> entrySet = doc.entrySet();
@@ -57,7 +58,7 @@ public class CustomerRunner implements CommandLineRunner {
 				}
 			}
 		}
-		System.out.println("********************************************************************************************");
+		System.out.println("********************************************************************************************\n");
 	}
 
 }
