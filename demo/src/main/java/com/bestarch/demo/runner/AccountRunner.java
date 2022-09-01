@@ -16,51 +16,40 @@ import com.redis.lettucemod.search.AggregateOptions;
 import com.redis.lettucemod.search.AggregateResults;
 import com.redis.lettucemod.search.Group;
 import com.redis.lettucemod.search.Reducers;
-import com.redis.lettucemod.search.Reducers.Max;
-import com.redis.lettucemod.search.Reducers.Sum;
+import com.redis.lettucemod.search.Reducers.Count;
 
 @Component
-@Order(3)
+@Order(4)
 public class AccountRunner implements CommandLineRunner {
 	
 	@Autowired
 	private StatefulRedisModulesConnection<String, String> connection;
 	
-	//FT.AGGREGATE idx_loan '@amount:[0 +inf]' groupby 1 @loanType REDUCE MAX 1 @amount as loanmount 
-	private final static String MAXIMUM_LOAN_BY_LOANTYPE = "@amount:[0 +inf]";
-	
-	//FT.AGGREGATE idx_loan *  groupby 1 @loanType REDUCE SUM 1 @amount as loanmount
-	private final static String TOTAL_LOAN_LIABILITY_BY_LOANTYPE = "*";
-	
-	//FT.AGGREGATE idx_loan '@loanType:{HOME}' groupby 1 @loanType  REDUCE SUM 1 @amount as loanmount
-	private final static String TOTAL_LOAN_GIVEN_AS_HOME_LOAN = "@loanType:{HOME}";
+	//FT.AGGREGATE idx_account * groupBy 1 @accountType REDUCE COUNT 0 as count
+	private final static String NUMBER_OF_TYPES_OF_ACCOUNT_PRESENT_IN_BANK = "*";
 	
 	@Override
 	public void run(String... args) throws Exception {
-		getMaximumLoanByLoanType();
-		getTotalLoanLiabilityByLoanType();
-		getTotalLoanGivenAsHomeLoan();
+		getNoOfTypesOfAccountPresentInBank();
 	}
 
-	private void getMaximumLoanByLoanType() {
+	private void getNoOfTypesOfAccountPresentInBank() {
 		RediSearchCommands<String, String> commands = connection.sync();
 		
-		Max maxReducer = Reducers.Max
-				.property("amount").as("loanmount")
-				.build();
+		Count countReducer = Reducers.Count.as("count");
 		
 		Group group = Group
-				.by(new String[] { "loanType" })
-				.reducer(maxReducer)
+				.by(new String[] { "accountType" })
+				.reducer(countReducer)
 				.build();
 		
 		AggregateOptions<String, String> aggregateOptions = AggregateOptions.<String, String>builder()
 				.operation(group)
 				.build();
 		
-		AggregateResults<String> results = commands.ftAggregate("idx_loan", MAXIMUM_LOAN_BY_LOANTYPE, aggregateOptions);
+		AggregateResults<String> results = commands.ftAggregate("idx_account", NUMBER_OF_TYPES_OF_ACCOUNT_PRESENT_IN_BANK, aggregateOptions);
 		
-		System.out.println("*********** Maximum loan by loan type *******************");
+		System.out.println("*********** No of types of account held in bank *******************");
 		for (Map<String, Object> map : results) {
 			Set<Entry<String, Object>> entrySet = map.entrySet();
 			Iterator<Entry<String, Object>> iter = entrySet.iterator();
@@ -72,63 +61,4 @@ public class AccountRunner implements CommandLineRunner {
 		System.out.println("********************************************************************************************\n");
 	}
 	
-	private void getTotalLoanLiabilityByLoanType() {
-		RediSearchCommands<String, String> commands = connection.sync();
-		Sum sumReducer = Reducers.Sum
-				.property("amount").as("loanmount")
-				.build();
-		
-		Group group = Group
-				.by(new String[] { "loanType" })
-				.reducer(sumReducer)
-				.build();
-		
-		AggregateOptions<String, String> aggregateOptions = AggregateOptions.<String, String>builder()
-				.operation(group)
-				.build();
-		
-		AggregateResults<String> results = commands.ftAggregate("idx_loan", TOTAL_LOAN_LIABILITY_BY_LOANTYPE, aggregateOptions);
-		System.out.println("*********** Total loan liability by loan type *******************");
-		for (Map<String, Object> map : results) {
-			Set<Entry<String, Object>> entrySet = map.entrySet();
-			Iterator<Entry<String, Object>> iter = entrySet.iterator();
-			while (iter.hasNext()) {
-				Entry<String, Object> en = iter.next();
-				System.out.println(en.getKey() + " = " + en.getValue());
-			}
-		}
-		System.out.println("********************************************************************************************\n");
-		
-	}
-	
-	private void getTotalLoanGivenAsHomeLoan() {
-		RediSearchCommands<String, String> commands = connection.sync();
-		Sum sumReducer = Reducers.Sum
-				.property("amount").as("loanmount")
-				.build();
-		
-		Group group = Group
-				.by(new String[] { "loanType" })
-				.reducer(sumReducer)
-				.build();
-		
-		AggregateOptions<String, String> aggregateOptions = AggregateOptions.<String, String>builder()
-				.operation(group)
-				.build();
-		
-		AggregateResults<String> results = commands.ftAggregate("idx_loan", TOTAL_LOAN_GIVEN_AS_HOME_LOAN, aggregateOptions);
-		
-		System.out.println("*********** Total loan given as home loan *******************");
-		for (Map<String, Object> map : results) {
-			Set<Entry<String, Object>> entrySet = map.entrySet();
-			Iterator<Entry<String, Object>> iter = entrySet.iterator();
-			while (iter.hasNext()) {
-				Entry<String, Object> en = iter.next();
-				System.out.println(en.getKey() + " = " + en.getValue());
-			}
-		}
-		System.out.println("********************************************************************************************\n");
-		
-	}
-
 }
