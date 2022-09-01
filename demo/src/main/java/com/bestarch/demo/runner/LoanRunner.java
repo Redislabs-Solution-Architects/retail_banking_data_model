@@ -38,14 +38,13 @@ public class LoanRunner implements CommandLineRunner {
 	
 	@Override
 	public void run(String... args) throws Exception {
-		RediSearchCommands<String, String> commands = connection.sync();
-		
-		getMaximumLoanByLoanType(commands);
-		getTotalLoanLiabilityByLoanType(commands);
-		getTotalLoanGivenAsHomeLoan(commands);
+		getMaximumLoanByLoanType();
+		getTotalLoanLiabilityByLoanType();
+		getTotalLoanGivenAsHomeLoan();
 	}
 
-	private void getMaximumLoanByLoanType(RediSearchCommands<String, String> commands) {
+	private void getMaximumLoanByLoanType() {
+		RediSearchCommands<String, String> commands = connection.sync();
 		Collection<String> groupByField = Arrays.asList(new String[] { "loanType" });
 		Max maxReducer = Reducer.Max.builder()
 				.property("amount").as("loanmount")
@@ -67,7 +66,8 @@ public class LoanRunner implements CommandLineRunner {
 		System.out.println("********************************************************************************************\n");
 	}
 	
-	private void getTotalLoanLiabilityByLoanType(RediSearchCommands<String, String> commands) {
+	private void getTotalLoanLiabilityByLoanType() {
+		RediSearchCommands<String, String> commands = connection.sync();
 		Collection<String> groupByField = Arrays.asList(new String[] { "loanType" });
 		Sum sumReducer = Reducer.Sum.builder()
 				.property("amount").as("loanmount")
@@ -90,7 +90,8 @@ public class LoanRunner implements CommandLineRunner {
 		
 	}
 	
-	private void getTotalLoanGivenAsHomeLoan(RediSearchCommands<String, String> commands) {
+	private void getTotalLoanGivenAsHomeLoan() {
+		RediSearchCommands<String, String> commands = connection.sync();
 		Collection<String> groupByField = Arrays.asList(new String[] { "loanType" });
 		Sum sumReducer = Reducer.Sum.builder()
 				.property("amount").as("loanmount")

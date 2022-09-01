@@ -40,13 +40,13 @@ public class CreditCardRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		RediSearchCommands<String, String> commands = connection.sync();
-		getAllCreditCardByCIF(commands);
-		getTotalNoOfCCByType(commands);
-		getTotalNoOfInactiveCC(commands);
+		getAllCreditCardByCIF();
+		getTotalNoOfCCByType();
+		getTotalNoOfInactiveCC();
 	}
 
-	private void getAllCreditCardByCIF(RediSearchCommands<String, String> commands) {
+	private void getAllCreditCardByCIF() {
+		RediSearchCommands<String, String> commands = connection.sync();
 		SearchOptions<String> searchOptions = SearchOptions.<String>builder()
 				.returnFields(Arrays.asList(new String[] { "creditCardNo", "type" })).build();
 		
@@ -64,7 +64,8 @@ public class CreditCardRunner implements CommandLineRunner {
 		System.out.println("********************************************************************************************\n");
 	}
 	
-	private void getTotalNoOfCCByType(RediSearchCommands<String, String> commands) {
+	private void getTotalNoOfCCByType() {
+		RediSearchCommands<String, String> commands = connection.sync();
 		Collection<String> groupByField = Arrays.asList(new String[] { "type" });
 		Count countReducer = Reducer.Count.of("ccTypes");
 				
@@ -85,7 +86,8 @@ public class CreditCardRunner implements CommandLineRunner {
 	}
 	
 	
-	private void getTotalNoOfInactiveCC(RediSearchCommands<String, String> commands) {
+	private void getTotalNoOfInactiveCC() {
+		RediSearchCommands<String, String> commands = connection.sync();
 		Collection<String> groupByField = Arrays.asList(new String[] { "active" });
 		Count countReducer = Reducer.Count.of("inactiveCards");
 				
