@@ -21,7 +21,7 @@ import com.redis.lettucemod.search.Reducers.Sum;
 
 @Component
 @Order(3)
-public class LoanRunner implements CommandLineRunner {
+public class AccountRunner implements CommandLineRunner {
 	
 	@Autowired
 	private StatefulRedisModulesConnection<String, String> connection;

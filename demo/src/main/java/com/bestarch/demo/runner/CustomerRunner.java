@@ -11,18 +11,17 @@ import org.springframework.stereotype.Component;
 
 import com.bestarch.demo.domain.Customer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redislabs.lettusearch.Document;
-import com.redislabs.lettusearch.RediSearchCommands;
-import com.redislabs.lettusearch.SearchOptions;
-import com.redislabs.lettusearch.SearchResults;
-import com.redislabs.lettusearch.StatefulRediSearchConnection;
+import com.redis.lettucemod.api.StatefulRedisModulesConnection;
+import com.redis.lettucemod.api.sync.RediSearchCommands;
+import com.redis.lettucemod.search.Document;
+import com.redis.lettucemod.search.SearchResults;
 
 @Component
 @Order(1)
 public class CustomerRunner implements CommandLineRunner {
 	
 	@Autowired
-	private StatefulRediSearchConnection<String, String> connection;
+	private StatefulRedisModulesConnection<String, String> connection;
 	
 	private final static ObjectMapper objectMapper = new ObjectMapper();
 	
@@ -32,14 +31,8 @@ public class CustomerRunner implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		RediSearchCommands<String, String> commands = connection.sync();
-		//SortBy<String> sortBy = SortBy.<String>builder().field("productName").build();
-		//Limit limit = SearchOptions.Limit.builder().offset(offset).num(page).build();
-		SearchOptions<String> searchOptions = SearchOptions
-				.<String>builder()
-				//.sortBy(sortBy)
-				//.limit(limit)
-				.build();
-		SearchResults<String, String> results = commands.search("idx_customer", CUSTOMER_BY_EMAIL);
+		
+		SearchResults<String, String> results = commands.ftSearch("idx_customer", CUSTOMER_BY_EMAIL);
 		
 		System.out.println("*********** Get customer by email *******************");
 		Customer c = null;

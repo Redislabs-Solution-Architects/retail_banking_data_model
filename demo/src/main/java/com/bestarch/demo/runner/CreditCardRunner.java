@@ -1,7 +1,5 @@
 package com.bestarch.demo.runner;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,22 +10,23 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import com.redislabs.lettusearch.AggregateOptions;
-import com.redislabs.lettusearch.AggregateOptions.Operation.GroupBy.Reducer;
-import com.redislabs.lettusearch.AggregateOptions.Operation.GroupBy.Reducer.Count;
-import com.redislabs.lettusearch.AggregateResults;
-import com.redislabs.lettusearch.Document;
-import com.redislabs.lettusearch.RediSearchCommands;
-import com.redislabs.lettusearch.SearchOptions;
-import com.redislabs.lettusearch.SearchResults;
-import com.redislabs.lettusearch.StatefulRediSearchConnection;
+import com.redis.lettucemod.api.StatefulRedisModulesConnection;
+import com.redis.lettucemod.api.sync.RediSearchCommands;
+import com.redis.lettucemod.search.AggregateOptions;
+import com.redis.lettucemod.search.AggregateResults;
+import com.redis.lettucemod.search.Document;
+import com.redis.lettucemod.search.Group;
+import com.redis.lettucemod.search.Reducers;
+import com.redis.lettucemod.search.Reducers.Count;
+import com.redis.lettucemod.search.SearchOptions;
+import com.redis.lettucemod.search.SearchResults;
 
 @Component
 @Order(2)
 public class CreditCardRunner implements CommandLineRunner {
 
 	@Autowired
-	private StatefulRediSearchConnection<String, String> connection;
+	private StatefulRedisModulesConnection<String, String> connection;
 
 	// FT.SEARCH idx_cccard '@cif:(QEOE110093342)' return 2 creditCardNo type
 	private final static String CREDIT_CARD_BY_CIF = "@cif:(QEOE110093342)";
@@ -47,10 +46,11 @@ public class CreditCardRunner implements CommandLineRunner {
 
 	private void getAllCreditCardByCIF() {
 		RediSearchCommands<String, String> commands = connection.sync();
-		SearchOptions<String> searchOptions = SearchOptions.<String>builder()
-				.returnFields(Arrays.asList(new String[] { "creditCardNo", "type" })).build();
+		SearchOptions<String, String> searchOptions = SearchOptions.<String, String>builder()
+				.returnFields(new String[] { "creditCardNo", "type" })
+				.build();
 		
-		SearchResults<String, String> results = commands.search("idx_cccard", CREDIT_CARD_BY_CIF, searchOptions);
+		SearchResults<String, String> results = commands.ftSearch("idx_cccard", CREDIT_CARD_BY_CIF, searchOptions);
 		
 		System.out.println("*********** Credit cards by CIF *******************");
 		for (Document<String, String> doc : results) {
@@ -66,13 +66,19 @@ public class CreditCardRunner implements CommandLineRunner {
 	
 	private void getTotalNoOfCCByType() {
 		RediSearchCommands<String, String> commands = connection.sync();
-		Collection<String> groupByField = Arrays.asList(new String[] { "type" });
-		Count countReducer = Reducer.Count.of("ccTypes");
+		Count countReducer = Reducers.Count.as("ccTypes");
 				
-		AggregateOptions aggregateOptions = AggregateOptions.builder()
-									.groupBy(groupByField, countReducer)
-									.build();
-		AggregateResults<String> results = commands.aggregate("idx_cccard", TOTAL_NO_OF_CC_BY_TYPE, aggregateOptions);
+		Group group = Group
+				.by(new String[] { "type" })
+				.reducer(countReducer)
+				.build();
+		
+		AggregateOptions<String, String> aggregateOptions = AggregateOptions.<String, String>builder()
+				.operation(group)
+				.build();
+		
+		AggregateResults<String> results = commands.ftAggregate("idx_cccard", TOTAL_NO_OF_CC_BY_TYPE, aggregateOptions);
+		
 		System.out.println("*********** Total no of credit card by type *******************");
 		for (Map<String, Object> map : results) {
 			Set<Entry<String, Object>> entrySet = map.entrySet();
@@ -88,13 +94,19 @@ public class CreditCardRunner implements CommandLineRunner {
 	
 	private void getTotalNoOfInactiveCC() {
 		RediSearchCommands<String, String> commands = connection.sync();
-		Collection<String> groupByField = Arrays.asList(new String[] { "active" });
-		Count countReducer = Reducer.Count.of("inactiveCards");
+		Count countReducer = Reducers.Count.as("inactiveCards");
 				
-		AggregateOptions aggregateOptions = AggregateOptions.builder()
-									.groupBy(groupByField, countReducer)
-									.build();
-		AggregateResults<String> results = commands.aggregate("idx_cccard", TOTAL_NO_OF_INACTIVE_CC, aggregateOptions);
+		Group group = Group
+				.by(new String[] { "active" })
+				.reducer(countReducer)
+				.build();
+		
+		AggregateOptions<String, String> aggregateOptions = AggregateOptions.<String, String>builder()
+				.operation(group)
+				.build();
+		
+		AggregateResults<String> results = commands.ftAggregate("idx_cccard", TOTAL_NO_OF_INACTIVE_CC, aggregateOptions);
+		
 		System.out.println("*********** Total no of inactive credit cards *******************");
 		for (Map<String, Object> map : results) {
 			Set<Entry<String, Object>> entrySet = map.entrySet();
