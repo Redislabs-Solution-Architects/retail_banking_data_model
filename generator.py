@@ -1,10 +1,13 @@
 import redis
 from faker import Faker
 import random
+from jproperties import Properties
 
 Faker.seed(0)
 fake = Faker('en_IN')
-
+configs = Properties()
+with open('./config/app-config.properties', 'rb') as config_file:
+    configs.load(config_file)
 
 accTypeList = ["SAVINGS", "CURRENT"]
 lnType = ["PERSONAL", "HOME", "VEHICLE", "HOME_MAINTENANCE"]
@@ -181,7 +184,7 @@ def generateDebitCardDetails(accountNo, cif, conn):
 if __name__ == '__main__':
     chunk = 100
     count = 500
-    conn = redis.Redis(host='localhost', port=6379)
+    conn = redis.Redis(host=configs.get("HOST").data, port=configs.get("PORT").data)
     if not conn.ping():
         raise Exception('Redis unavailable')
     for x in range(chunk):
