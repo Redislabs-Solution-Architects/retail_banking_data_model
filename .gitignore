@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+/.idea/
+demo/.settings/
+
+demo/.classpath
+demo/.factorypath
+demo/.project
