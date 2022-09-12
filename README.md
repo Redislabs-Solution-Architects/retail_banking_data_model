@@ -115,9 +115,9 @@ python3 generator.py
 #### Indexes
 ```
 FT.CREATE idx_customer on JSON PREFIX 1 customer: SCHEMA $.cif as cif TEXT $.name as name TEXT $.mobile as mobile TEXT $.pan as pan TEXT $.aadhaar as aadhaar TEXT $.email as email TEXT
-FT.CREATE idx_account on JSON PREFIX 1 account: SCHEMA $.cif as cif TEXT $.accountNo as accountNo TEXT $.accountType as accountType TAG $.dormant as dormant TAG $.iBankEnabled as iBankEnabled TAG $.nominee.nomineeId as nomineeId TEXT 
+FT.CREATE idx_account on JSON PREFIX 1 account: SCHEMA $.cif as cif TEXT $.accountNo as accountNo TEXT $.accountType as accountType TAG $.dormant as dormant TAG $.iBankEnabled as iBankEnabled TAG $.accountOpenDate as accountOpenDate NUMERIC sortable  $.nominee.nomineeId as nomineeId TEXT
+FT.CREATE idx_cccard on JSON PREFIX 1 cccard: SCHEMA $.cif as cif TEXT $.creditCardNo as creditCardNo TEXT $.issueDate as issueDate NUMERIC SORTABLE $.expiryDate as expiryDate NUMERIC SORTABLE $.type as type TAG $.active as active TAG
 FT.CREATE idx_dbcard on JSON PREFIX 1 dbcard: SCHEMA $.cif as cif TEXT $.accountNo as accountNo TEXT $.type as type TAG 
-FT.CREATE idx_cccard on JSON PREFIX 1 cccard: SCHEMA $.cif as cif TEXT $.creditCardNo as creditCardNo TEXT $.expiryDate as expiryDate TEXT $.type as type TAG $.active as active TAG 
 FT.CREATE idx_loan on JSON PREFIX 1 loan: SCHEMA $.cif as cif TEXT $.amount as amount NUMERIC SORTABLE $.loanType as loanType TAG
 ```
 
