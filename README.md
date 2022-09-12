@@ -148,3 +148,10 @@ FT.CREATE idx_loan on JSON PREFIX 1 loan: SCHEMA $.cif as cif TEXT $.amount as a
           - FT.AGGREGATE idx_account * groupBy 1 @accountType REDUCE COUNT 0 as count
 10. Search customer by name
           - FT.SEARCH idx_customer '@name: srivastava'
+
+#### Execute using Java/Spring
+Detailed code examples are provided:
+[Java code examples](https://github.com/Redislabs-Solution-Architects/retail_banking_data_model/tree/main/demo/src/main/java/com/bestarch/demo/runner)
+
+This uses [Lettuce-Mod](https://github.com/redis-developer/lettucemod) as client library for doing advanced Redis operations like search, JSON and Timeseries modules.
+
