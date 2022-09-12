@@ -104,7 +104,14 @@ LoanAccount
   "active": true
 }
 ```
+ 
+ 
+#### Data Model
+ 
+ ![retail_class drawio](https://user-images.githubusercontent.com/26322220/189685155-e14a5ee0-28a3-4b83-9d95-195b4f5b91ee.png)
 
+
+ 
 #### Running the data loader
 ```commandline
 source venv/bin/activate
