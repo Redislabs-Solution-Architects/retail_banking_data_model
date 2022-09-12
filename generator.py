@@ -2,6 +2,8 @@ import redis
 from faker import Faker
 import random
 from jproperties import Properties
+import time
+from datetime import datetime
 
 Faker.seed(0)
 fake = Faker('en_IN')
@@ -12,8 +14,8 @@ with open('./config/app-config.properties', 'rb') as config_file:
 accTypeList = ["SAVINGS", "CURRENT"]
 lnType = ["PERSONAL", "HOME", "VEHICLE", "HOME_MAINTENANCE"]
 relationTypeList = ["SPOUSE", "SON", "DAUGHTER", "MOTHER", "FATHER", "SIBLING"]
-bankCode = "DSI7452387423"
-ifsc = "DSI6898694"
+bankCode = configs.get("SAMPLE_BANK_CODE").data
+ifsc = configs.get("SAMPLE_IFSC").data
 
 
 def generate_data(count, conn):
@@ -43,7 +45,8 @@ def generate_data(count, conn):
         kycOnfile = fake.boolean(chance_of_getting_true=75)
         iBankEnabled = fake.boolean(chance_of_getting_true=33)
         mBankEnabled = fake.boolean(chance_of_getting_true=25)
-        accountOpenDate = str(fake.date_between(start_date='-15y', end_date='today'))
+        accountOpenDateObj = fake.date_time_between(start_date='-15y', end_date='now')
+        accountOpenDate = int(time.mktime(accountOpenDateObj.timetuple()))
         dormant = fake.boolean(chance_of_getting_true=9)
         accountType = random.choice(accTypeList)
 
@@ -52,7 +55,6 @@ def generate_data(count, conn):
         ledgerBalance = availableBalance + temp
 
         noOfNominee = fake.pyint(min_value=0, max_value=2)
-        print(noOfNominee)
         nominee = get_nominee(noOfNominee)
 
         cust = {
@@ -64,8 +66,8 @@ def generate_data(count, conn):
 
         account = {
             "cif": cif, "accountNo": accountNo, "accountType": accountType,
-            "dormant": dormant, "accountOpenDate": accountOpenDate, "iBankEnabled": iBankEnabled,
-            "mBankEnabled": mBankEnabled, "nominee": nominee,
+            "dormant": dormant, "accountOpenDate": accountOpenDate, "accountOpenDateStr": str(accountOpenDateObj),
+            "iBankEnabled": iBankEnabled, "mBankEnabled": mBankEnabled, "nominee": nominee,
             "availableBalance": availableBalance, "ledgerBalance": ledgerBalance
         }
 
@@ -130,11 +132,17 @@ def generateCreditCardDetails(cif, conn):
     if noOfCCCard == 1:
         creditCardNo1 = fake.credit_card_number()
         ccType1 = fake.credit_card_provider()
-        ccExpiry1 = fake.credit_card_expire()
+
+        issueDateObj = fake.date_time_between(start_date='-6y', end_date='-2y')
+        issueDate = int(time.mktime(issueDateObj.timetuple()))
+
+        ccExpiry1Obj = fake.date_time_between(start_date='-2y', end_date='+6y')
+        ccExpiry1 = int(time.mktime(ccExpiry1Obj.timetuple()))
+
         ccCard1 = {
-            "cif": cif, "description": ccType1 + ' card ending with expiry ' + ccExpiry1,
-            "creditCardNo": creditCardNo1, "issueDate": str(fake.date_between(start_date='-4y')),
-            "expiryDate": ccExpiry1, "cvv": fake.credit_card_security_code(),
+            "cif": cif, "description": ccType1 + ' card ending with expiry ' + str(ccExpiry1Obj),
+            "creditCardNo": creditCardNo1, "issueDate": issueDate, "issueDateStr": str(issueDateObj),
+            "expiryDate": ccExpiry1, "expiryDateStr": str(ccExpiry1Obj), "cvv": fake.credit_card_security_code(),
             "type": ccType1, "active": fake.boolean(chance_of_getting_true=85)
         }
         ccPrefix1 = "cccard:" + cif + ":" + creditCardNo1
@@ -144,18 +152,27 @@ def generateCreditCardDetails(cif, conn):
         ccType1 = fake.credit_card_provider()
         ccType2 = fake.credit_card_provider()
         creditCardNo2 = fake.credit_card_number()
-        ccExpiry1 = fake.credit_card_expire()
-        ccExpiry2 = fake.credit_card_expire()
+
+        issueDateObj1 = fake.date_time_between(start_date='-6y', end_date='-2y')
+        issueDate1 = int(time.mktime(issueDateObj1.timetuple()))
+        issueDateObj2 = fake.date_time_between(start_date='-6y', end_date='-2y')
+        issueDate2 = int(time.mktime(issueDateObj2.timetuple()))
+
+        ccExpiry1Obj = fake.date_time_between(start_date='-2y', end_date='+6y')
+        ccExpiry1 = int(time.mktime(ccExpiry1Obj.timetuple()))
+        ccExpiry2Obj = fake.date_time_between(start_date='-2y', end_date='+6y')
+        ccExpiry2 = int(time.mktime(ccExpiry2Obj.timetuple()))
+
         ccCard1 = {
-            "cif": cif, "description": ccType1 + ' card ending with expiry ' + ccExpiry1,
-            "creditCardNo": creditCardNo1, "issueDate": str(fake.date_between(start_date='-4y')),
-            "expiryDate": ccExpiry1, "cvv": fake.credit_card_security_code(),
+            "cif": cif, "description": ccType1 + ' card ending with expiry ' + str(ccExpiry1Obj),
+            "creditCardNo": creditCardNo1, "issueDate": issueDate1, "issueDateStr": str(issueDateObj1),
+            "expiryDate": ccExpiry1, "expiryDateStr": str(ccExpiry1Obj), "cvv": fake.credit_card_security_code(),
             "type": ccType1, "active": fake.boolean(chance_of_getting_true=85)
         }
         ccCard2 = {
-            "cif": cif, "description": ccType2 + ' card ending with expiry ' + ccExpiry2,
-            "creditCardNo": creditCardNo2, "issueDate": str(fake.date_between(start_date='-4y')),
-            "expiryDate": ccExpiry2, "cvv": fake.credit_card_security_code(),
+            "cif": cif, "description": ccType2 + ' card ending with expiry ' + str(ccExpiry2Obj),
+            "creditCardNo": creditCardNo2, "issueDate": issueDate2, "issueDateStr": str(issueDateObj2),
+            "expiryDate": ccExpiry2, "expiryDateStr": str(ccExpiry2Obj), "cvv": fake.credit_card_security_code(),
             "type": ccType2, "active": fake.boolean(chance_of_getting_true=85)
         }
         ccPrefix1 = "cccard:" + cif + ":" + creditCardNo1
