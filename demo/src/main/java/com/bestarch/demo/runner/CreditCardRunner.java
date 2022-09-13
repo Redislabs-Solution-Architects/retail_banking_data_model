@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -24,17 +26,28 @@ import com.redis.lettucemod.search.SearchResults;
 @Component
 @Order(2)
 public class CreditCardRunner implements CommandLineRunner {
+	
+	private static Logger logger = LoggerFactory.getLogger(CreditCardRunner.class);
 
 	@Autowired
 	private StatefulRedisModulesConnection<String, String> connection;
 
-	// FT.SEARCH idx_cccard '@cif:(QEOE110093342)' return 2 creditCardNo type
+	/**
+	 * Actual RediSearch query --> 
+	 * FT.SEARCH idx_cccard '@cif:(QEOE110093342)' return 2 creditCardNo type
+	 */
 	private final static String CREDIT_CARD_BY_CIF = "@cif:(QEOE110093342)";
 	
-	//FT.AGGREGATE idx_cccard * groupby 1 @type REDUCE COUNT 0 as ccTypes
+	/**
+	 * Actual RediSearch query --> 
+	 * FT.AGGREGATE idx_cccard * groupby 1 @type REDUCE COUNT 0 as ccTypes
+	 */
 	private final static String TOTAL_NO_OF_CC_BY_TYPE = "*";
 	
-	//FT.AGGREGATE idx_cccard '@active:{false}' groupby 1 @active REDUCE COUNT 0 as inactiveCards
+	/**
+	 * Actual RediSearch query --> 
+	 * FT.AGGREGATE idx_cccard '@active:{false}' groupby 1 @active REDUCE COUNT 0 as inactiveCards
+	 */
 	private final static String TOTAL_NO_OF_INACTIVE_CC = "@active:{false}";
 
 	@Override
@@ -52,7 +65,7 @@ public class CreditCardRunner implements CommandLineRunner {
 		
 		SearchResults<String, String> results = commands.ftSearch("idx_cccard", CREDIT_CARD_BY_CIF, searchOptions);
 		
-		System.out.println("*********** Credit cards by CIF *******************");
+		logger.info("*********** Credit cards by CIF *******************");
 		for (Document<String, String> doc : results) {
 			Set<Entry<String, String>> entrySet = doc.entrySet();
 			Iterator<Entry<String, String>> iter = entrySet.iterator();
@@ -61,7 +74,7 @@ public class CreditCardRunner implements CommandLineRunner {
 				System.out.println(en.getKey() + " = " + en.getValue());
 			}
 		}
-		System.out.println("********************************************************************************************\n");
+		logger.info("***********************************************************\n");
 	}
 	
 	private void getTotalNoOfCCByType() {
@@ -79,7 +92,7 @@ public class CreditCardRunner implements CommandLineRunner {
 		
 		AggregateResults<String> results = commands.ftAggregate("idx_cccard", TOTAL_NO_OF_CC_BY_TYPE, aggregateOptions);
 		
-		System.out.println("*********** Total no of credit card by type *******************");
+		logger.info("*********** Total no of credit card by type *******************");
 		for (Map<String, Object> map : results) {
 			Set<Entry<String, Object>> entrySet = map.entrySet();
 			Iterator<Entry<String, Object>> iter = entrySet.iterator();
@@ -88,7 +101,7 @@ public class CreditCardRunner implements CommandLineRunner {
 				System.out.println(en.getKey() + " = " + en.getValue());
 			}
 		}
-		System.out.println("********************************************************************************************\n");
+		logger.info("***********************************************************\n");
 	}
 	
 	
@@ -107,7 +120,7 @@ public class CreditCardRunner implements CommandLineRunner {
 		
 		AggregateResults<String> results = commands.ftAggregate("idx_cccard", TOTAL_NO_OF_INACTIVE_CC, aggregateOptions);
 		
-		System.out.println("*********** Total no of inactive credit cards *******************");
+		logger.info("*********** Total no of inactive credit cards *******************");
 		for (Map<String, Object> map : results) {
 			Set<Entry<String, Object>> entrySet = map.entrySet();
 			Iterator<Entry<String, Object>> iter = entrySet.iterator();
@@ -116,7 +129,7 @@ public class CreditCardRunner implements CommandLineRunner {
 				System.out.println(en.getKey() + " = " + en.getValue());
 			}
 		}
-		System.out.println("********************************************************************************************\n");
+		logger.info("***********************************************************\n");
 	}
 
 }

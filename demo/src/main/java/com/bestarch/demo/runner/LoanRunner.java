@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -23,16 +25,27 @@ import com.redis.lettucemod.search.Reducers.Sum;
 @Order(3)
 public class LoanRunner implements CommandLineRunner {
 	
+	private static Logger logger = LoggerFactory.getLogger(LoanRunner.class);
+	
 	@Autowired
 	private StatefulRedisModulesConnection<String, String> connection;
 	
-	//FT.AGGREGATE idx_loan '@amount:[0 +inf]' groupby 1 @loanType REDUCE MAX 1 @amount as loanmount 
+	/**
+	 * Actual RediSearch query --> 
+	 * FT.AGGREGATE idx_loan '@amount:[0 +inf]' groupby 1 @loanType REDUCE MAX 1 @amount as loanmount 
+	 */
 	private final static String MAXIMUM_LOAN_BY_LOANTYPE = "@amount:[0 +inf]";
 	
-	//FT.AGGREGATE idx_loan *  groupby 1 @loanType REDUCE SUM 1 @amount as loanmount
+	/**
+	 * Actual RediSearch query --> 
+	 * FT.AGGREGATE idx_loan *  groupby 1 @loanType REDUCE SUM 1 @amount as loanmount
+	 */
 	private final static String TOTAL_LOAN_LIABILITY_BY_LOANTYPE = "*";
 	
-	//FT.AGGREGATE idx_loan '@loanType:{HOME}' groupby 1 @loanType  REDUCE SUM 1 @amount as loanmount
+	/**
+	 * Actual RediSearch query --> 
+	 * FT.AGGREGATE idx_loan '@loanType:{HOME}' groupby 1 @loanType  REDUCE SUM 1 @amount as loanmount
+	 */
 	private final static String TOTAL_LOAN_GIVEN_AS_HOME_LOAN = "@loanType:{HOME}";
 	
 	@Override
@@ -60,7 +73,7 @@ public class LoanRunner implements CommandLineRunner {
 		
 		AggregateResults<String> results = commands.ftAggregate("idx_loan", MAXIMUM_LOAN_BY_LOANTYPE, aggregateOptions);
 		
-		System.out.println("*********** Maximum loan by loan type *******************");
+		logger.info("*********** Maximum loan by loan type *******************");
 		for (Map<String, Object> map : results) {
 			Set<Entry<String, Object>> entrySet = map.entrySet();
 			Iterator<Entry<String, Object>> iter = entrySet.iterator();
@@ -69,7 +82,7 @@ public class LoanRunner implements CommandLineRunner {
 				System.out.println(en.getKey() + " = " + en.getValue());
 			}
 		}
-		System.out.println("********************************************************************************************\n");
+		logger.info("***********************************************************\n");
 	}
 	
 	private void getTotalLoanLiabilityByLoanType() {
@@ -88,7 +101,7 @@ public class LoanRunner implements CommandLineRunner {
 				.build();
 		
 		AggregateResults<String> results = commands.ftAggregate("idx_loan", TOTAL_LOAN_LIABILITY_BY_LOANTYPE, aggregateOptions);
-		System.out.println("*********** Total loan liability by loan type *******************");
+		logger.info("*********** Total loan liability by loan type *******************");
 		for (Map<String, Object> map : results) {
 			Set<Entry<String, Object>> entrySet = map.entrySet();
 			Iterator<Entry<String, Object>> iter = entrySet.iterator();
@@ -97,7 +110,7 @@ public class LoanRunner implements CommandLineRunner {
 				System.out.println(en.getKey() + " = " + en.getValue());
 			}
 		}
-		System.out.println("********************************************************************************************\n");
+		logger.info("***********************************************************\n");
 		
 	}
 	
@@ -118,7 +131,7 @@ public class LoanRunner implements CommandLineRunner {
 		
 		AggregateResults<String> results = commands.ftAggregate("idx_loan", TOTAL_LOAN_GIVEN_AS_HOME_LOAN, aggregateOptions);
 		
-		System.out.println("*********** Total loan given as home loan *******************");
+		logger.info("*********** Total loan given as home loan *******************");
 		for (Map<String, Object> map : results) {
 			Set<Entry<String, Object>> entrySet = map.entrySet();
 			Iterator<Entry<String, Object>> iter = entrySet.iterator();
@@ -127,7 +140,7 @@ public class LoanRunner implements CommandLineRunner {
 				System.out.println(en.getKey() + " = " + en.getValue());
 			}
 		}
-		System.out.println("********************************************************************************************\n");
+		logger.info("***********************************************************\n");
 		
 	}
 
