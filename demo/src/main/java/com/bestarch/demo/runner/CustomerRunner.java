@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -20,12 +22,17 @@ import com.redis.lettucemod.search.SearchResults;
 @Order(1)
 public class CustomerRunner implements CommandLineRunner {
 	
+	private static Logger logger = LoggerFactory.getLogger(CustomerRunner.class);
+	
 	@Autowired
 	private StatefulRedisModulesConnection<String, String> connection;
 	
 	private final static ObjectMapper objectMapper = new ObjectMapper();
 	
-	//FT.SEARCH idx_customer '@email:(tiwarimishti\@example.org)'
+	/**
+	 * Actual RediSearch query --> 
+	 * FT.SEARCH idx_customer '@email:(tiwarimishti\@example.org)'
+	 */
 	private final static String CUSTOMER_BY_EMAIL = "@email:(tiwarimishti\\@example.org)";
 	
 	@Override
@@ -34,7 +41,7 @@ public class CustomerRunner implements CommandLineRunner {
 		
 		SearchResults<String, String> results = commands.ftSearch("idx_customer", CUSTOMER_BY_EMAIL);
 		
-		System.out.println("*********** Get customer by email *******************");
+		logger.info("*********** Get customer by email *******************");
 		Customer c = null;
 		for (Document<String, String> doc : results) {
 			Set<Entry<String, String>> entrySet = doc.entrySet();
@@ -51,7 +58,7 @@ public class CustomerRunner implements CommandLineRunner {
 				}
 			}
 		}
-		System.out.println("********************************************************************************************\n");
+		logger.info("***********************************************************\n");
 	}
 
 }
