@@ -14,6 +14,7 @@ TBD
 
 #### Sample JSON objects
 Customer
+  
   Key format: `customer:<ifsc>:<cif>`
 ```json
  {
@@ -33,6 +34,7 @@ Customer
 }
 ```
 Account
+  
    Key format: `account:<cif>:<accountNo>`
 ```json
 {
@@ -64,6 +66,7 @@ Account
 ```
 
 DebitCard
+  
    Key format: `dbcard:<accountNo>:<debitCardNo>`
 ```json
 {
@@ -79,6 +82,7 @@ DebitCard
 ```
 
 CreditCard
+  
    Key format: `cccard:<cif>:<creditCardNo>`
 ```json
 {
@@ -95,6 +99,7 @@ CreditCard
 ```
 
 LoanAccount
+  
    Key format: `loan:<cif>:<loanAccountNo>`
 ```json
 {
