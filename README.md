@@ -14,11 +14,12 @@ TBD
 
 #### Sample JSON objects
 Customer
+  Key format: `customer:<ifsc>:<cif>`
 ```json
  {
   "bankCode":"DSI7452387423",
   "ifsc":"DSI6898694",
-  "cif": "UYO9786898",
+  "cif": "RPBU8405747",
   "name": "B Suresh",
   "address": "B2, Greater Kailash, New Delhi, 110001",
   "virtualVault":"VBM5472364NM",
@@ -26,12 +27,13 @@ Customer
   "mobile": "9869546732",
   "pan": "BTY643768",
   "aadhaar": "321478659801",
-  "dob": "cif",
+  "dob": "05/11/1978",
   "email": "bsuresh.gmail.com",
   "kycOnfile": true
 }
 ```
 Account
+   Key format: `account:<cif>:<accountNo>`
 ```json
 {
   "cif": "UYO9786898",
@@ -62,6 +64,7 @@ Account
 ```
 
 DebitCard
+   Key format: `dbcard:<accountNo>:<debitCardNo>`
 ```json
 {
   "cif": "UYO9786898",
@@ -76,6 +79,7 @@ DebitCard
 ```
 
 CreditCard
+   Key format: `cccard:<cif>:<creditCardNo>`
 ```json
 {
   "cif": "UYO9786898",
@@ -91,6 +95,7 @@ CreditCard
 ```
 
 LoanAccount
+   Key format: `loan:<cif>:<loanAccountNo>`
 ```json
 {
   "cif": "UYO9786898,",
