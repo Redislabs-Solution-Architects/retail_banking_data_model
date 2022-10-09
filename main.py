@@ -145,5 +145,9 @@
 #
 # if __name__ == '__main__':
 #     print_hi('PyCharm')
-#     generate_data()
+#
+#     d = str(fake.date_between(start_date='-15y', end_date='today'))
+#     print(d)
+#
+#
 #     #test()
