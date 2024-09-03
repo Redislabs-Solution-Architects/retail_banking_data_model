@@ -18,7 +18,7 @@ bankCode = configs.get("SAMPLE_BANK_CODE").data
 ifsc = configs.get("SAMPLE_IFSC").data
 
 
-def generate_data(count, conn):
+def generate_data(count, conn, conn2):
     global name, address, cif, virtualVault, aadhaar, pan, phone, mobile, email, dob, \
         accountNo, kycOnfile, iBankEnabled, mBankEnabled, accountOpenDate, dormant, accountType, \
         debitCardNo, creditCardNo, cvv, loanAccountNo, loanFileNo, loanType, amount, nominee, dbCard
@@ -71,15 +71,18 @@ def generate_data(count, conn):
             "availableBalance": availableBalance, "ledgerBalance": ledgerBalance
         }
 
-        generateDebitCardDetails(accountNo, cif, conn)
-        generateCreditCardDetails(cif, conn)
-        generateLoanAccDetails(cif, conn)
+        generateDebitCardDetails(accountNo, cif, conn, conn2)
+        generateCreditCardDetails(cif, conn, conn2)
+        generateLoanAccDetails(cif, conn, conn2)
 
         custPrefix = "customer:" + ifsc + ":" + cif
         accPrefix = "account:" + cif + ":" + accountNo
 
         conn.json().set(custPrefix, "$", cust)
         conn.json().set(accPrefix, "$", account)
+
+        conn2.json().set(custPrefix, "$", cust)
+        conn2.json().set(accPrefix, "$", account)
 
 
 def get_nominee(no_of_nominee):
@@ -109,7 +112,7 @@ def get_nominee(no_of_nominee):
     return nominee
 
 
-def generateLoanAccDetails(cif, conn):
+def generateLoanAccDetails(cif, conn, conn2):
     global loanAccountNo
     noOfLoanAcc = fake.pyint(min_value=0, max_value=1)
     if noOfLoanAcc == 1:
@@ -125,9 +128,10 @@ def generateLoanAccDetails(cif, conn):
         }
         loanPrefix = "loan:" + cif + ":" + loanAccountNo
         conn.json().set(loanPrefix, "$", loanAccount)
+        conn2.json().set(loanPrefix, "$", loanAccount)
 
 
-def generateCreditCardDetails(cif, conn):
+def generateCreditCardDetails(cif, conn, conn2):
     noOfCCCard = fake.pyint(min_value=0, max_value=2)
     if noOfCCCard == 1:
         creditCardNo1 = fake.credit_card_number()
@@ -147,6 +151,7 @@ def generateCreditCardDetails(cif, conn):
         }
         ccPrefix1 = "cccard:" + cif + ":" + creditCardNo1
         conn.json().set(ccPrefix1, "$", ccCard1)
+        conn2.json().set(ccPrefix1, "$", ccCard1)
     elif noOfCCCard == 2:
         creditCardNo1 = fake.credit_card_number()
         ccType1 = fake.credit_card_provider()
@@ -179,9 +184,11 @@ def generateCreditCardDetails(cif, conn):
         ccPrefix2 = "cccard:" + cif + ":" + creditCardNo2
         conn.json().set(ccPrefix1, "$", ccCard1)
         conn.json().set(ccPrefix2, "$", ccCard2)
+        conn2.json().set(ccPrefix1, "$", ccCard1)
+        conn2.json().set(ccPrefix2, "$", ccCard2)
 
 
-def generateDebitCardDetails(accountNo, cif, conn):
+def generateDebitCardDetails(accountNo, cif, conn, conn2):
     global debitCardNo, dbCard
     noOfDebitCard = fake.pyint(min_value=0, max_value=1)
     if noOfDebitCard == 1:
@@ -196,17 +203,19 @@ def generateDebitCardDetails(accountNo, cif, conn):
         }
         dbcPrefix = "dbcard:" + accountNo + ":" + debitCardNo
         conn.json().set(dbcPrefix, "$", dbCard)
+        conn2.json().set(dbcPrefix, "$", dbCard)
 
 
 if __name__ == '__main__':
     chunk = 100
     count = 500
     conn = redis.Redis(host=configs.get("HOST").data, port=configs.get("PORT").data)
+    conn2 = redis.Redis(host="redis-10748.c21283.ap-south-1-1.ec2.cloud.rlrcp.com", port=10748, password="mOxcxZlBBb9LZXsBrbqibqEGkGfUcyEQ")
     if not conn.ping():
         raise Exception('Redis unavailable')
     for x in range(chunk):
         try:
-            generate_data(count, conn)
+            generate_data(count, conn, conn2)
             print(str(x+1) + " chunk(s) of recordset generated")
         except Exception as inst:
             print(type(inst))

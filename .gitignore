@@ -134,3 +134,11 @@ demo/.settings/
 demo/.classpath
 demo/.factorypath
 demo/.project
+.DS_Store
+demo/.DS_Store
+demo/src/.DS_Store
+demo/src/main/.DS_Store
+demo/src/main/java/.DS_Store
+demo/src/main/java/com/.DS_Store
+demo/src/main/java/com/bestarch/.DS_Store
+demo/src/main/java/com/bestarch/demo/.DS_Store
